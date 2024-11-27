@@ -1,50 +1,100 @@
-# React + TypeScript + Vite
+# CoinGuard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**A Web-Based Cryptocurrency HD Wallet**
 
-Currently, two official plugins are available:
+CoinGuard is a web-based cryptocurrency hierarchical deterministic (HD) wallet application designed to provide a secure and intuitive interface for managing digital assets. Currently, the wallet supports Ethereum and Solana, offering features such as mnemonic generation, seed derivation, and multi-account management, all adhering to industry standards like BIP-44.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- **Hierarchical Deterministic Wallet**:
+  - Implements BIP-44 standards for mnemonic generation and seed derivation.
+  - Supports multi-account functionality with unique address indices for Ethereum and Solana.
 
-- Configure the top-level `parserOptions` property like this:
+- **Blockchain Compatibility**:
+  - Ethereum (Coin Type: `60`)
+  - Solana (Coin Type: `501`)
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+- **Secure Key Management**:
+  - Utilizes `bip39`, `ed25519-hd-key`, and `nacl` for mnemonic-based keypair derivation.
+  - Handles public and private key generation while ensuring user privacy.
+
+- **Persistent State Management**:
+  - React Context API for state handling.
+  - Data persistence via LocalStorage for mnemonic, seed, and account information.
+
+## Tech Stack
+
+- **Frontend**: React, TypeScript
+- **Key Derivation Libraries**: Bip39, Ed25519-hd-key, Nacl
+- **Blockchain SDKs**: Web3.js (Ethereum), Solana Web3.js (Solana)
+- **State Management**: React Context API
+
+## Installation
+
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/aaryanpraveen16/CoinGuard.git
+    cd coinguard
+    ```
+
+2. Install dependencies:
+    ```bash
+    npm install
+    ```
+
+3. Start the development server:
+    ```bash
+    npm start
+    ```
+
+4. Access the app in your browser:
+    ```
+    http://localhost:3000
+    ```
+
+## Usage
+
+1. **Generate Recovery Phrase**: Start by generating a 12-word mnemonic recovery phrase.
+2. **Add Accounts**:
+    - Select a blockchain (Ethereum or Solana).
+    - Generate accounts with unique public/private keys and address indices.
+3. **View Balances**: Check account balances and manage multiple addresses.
+
+## File Structure
+
+```
+coinguard/
+├── src/
+│   ├── components/    # Reusable UI components
+│   ├── context/       # React Context for global state management
+│   ├── services/      # Key derivation and wallet logic
+│   ├── pages/         # Application pages (e.g., BalancePage, RecoveryPage)
+│   ├── App.tsx        # Main application entry point
+│   └── index.tsx      # React DOM rendering
+├── public/            # Public assets and HTML template
+├── package.json       # Project metadata and dependencies
+└── README.md          # Project documentation
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+## Key Commands
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+- **Run the development server**:
+    ```bash
+    npm run dev
+    ```
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+
+## License
+
+This project is licensed under the MIT License.
+
+
+## Contact
+
+For questions or feedback, feel free to reach out:
+- **Email**: aaryan.praveen@gmail.com
+- **GitHub**: [aaryanpraveen16]([https://github.com/your-username](https://github.com/aaryanpraveen16/aaryanpraveen16))
+
+
+
