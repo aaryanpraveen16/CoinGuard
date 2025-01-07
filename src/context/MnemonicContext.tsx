@@ -1,109 +1,161 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  ReactNode,
+} from "react";
 
-interface MnemonicContextType {
-  mnemonicString: string;
-  setMnemonicString: (mnemonic: string) => void;
+// Wallet Interface
+interface Wallet {
+  id: number;
+  type: number;
+  publicKey: string;
+  privateKey: string;
   seed: string;
-  setSeedState: (seed: string) => void;
-  coin_type: number;
-  setCoinType: (coinType: number) => void;
-  accounts: Account[];
-  addAccount: (account: Account) => void;
-  ethCount: number;
-  solCount: number;
-  totalCount: number;
+  balance: number;
 }
 
+// Account Interface
 interface Account {
-  id: number; // Unique identifier for the account
-  type: "ethereum" | "solana"; // Type of account
-  publicKey: string; // Public key
-  privateKey: string; // Private key or seed phrase (optional)
+  mnemonicString: string;
+  id: number;
+  username: string;
+  wallets: Wallet[];
 }
 
-const MnemonicContext = createContext<MnemonicContextType | undefined>(undefined);
+// Mnemonic Context Interface
+interface MnemonicContextType {
+  accounts: Account[];
+  activeAccountWallets: Wallet[];
+  activeAccountId: number;
+  activeWalletId: number;
+  setActiveAccount: (accountId: number) => void;
+  setActiveWallet: (walletId: number) => void;
+  addAccount: (account: Account) => void;
+  updateWalletInAccount: (wallet: Wallet, accountId: number) => void;
+  addAccountMnemonic: (accountId: number, newMnemonic: string) => void;
+  addWalletToAccount: (wallet: Wallet, accountId: number) => void;
+  // setActiveWallets:(accounts: Account[]) => void;
+}
 
-export const MnemonicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Load initial state from localStorage
-  const [mnemonicString, setMnemonicStringState] = useState<string>(() => {
-    return localStorage.getItem("mnemonicString") || "";
-  });
+// Create the context
+const MnemonicContext = createContext<MnemonicContextType | undefined>(
+  undefined
+);
 
-  const [seed, setSeedState] = useState<string>(() => {
-    return localStorage.getItem("seed") || "";
-  });
-
-  const [coin_type, setCoinTypeState] = useState<number>(() => {
-    return parseInt(localStorage.getItem("coin_type") || "0", 10);
-  });
-
-  const [accounts, setAccountsState] = useState<Account[]>(() => {
+// Provider Component
+export const MnemonicProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
+  const [accounts, setAccounts] = useState<Account[]>(() => {
     const storedAccounts = localStorage.getItem("accounts");
     return storedAccounts ? JSON.parse(storedAccounts) : [];
   });
-
-  const [ethCount, setEthCountState] = useState<number>(() => {
-    return parseInt(localStorage.getItem("ethCount") || "0", 10);
+  console.log("here");
+  const [activeAccountId, setActiveAccountId] = useState<number>(() => {
+    const storedActiveAccountId = localStorage.getItem("activeAccountId");
+    return storedActiveAccountId ? Number(storedActiveAccountId) : -1;
   });
 
-  const [solCount, setSolCountState] = useState<number>(() => {
-    return parseInt(localStorage.getItem("solCount") || "0", 10);
+  const [activeWalletId, setActiveWalletId] = useState<number>(() => {
+    const storedActiveWalletId = localStorage.getItem("activeWalletId");
+    return storedActiveWalletId ? Number(storedActiveWalletId) : 0;
   });
 
-  // Update localStorage whenever state changes
-  useEffect(() => {
-    localStorage.setItem("mnemonicString", mnemonicString);
-  }, [mnemonicString]);
-
-  useEffect(() => {
-    localStorage.setItem("seed", seed);
-  }, [seed]);
-
-  useEffect(() => {
-    localStorage.setItem("coin_type", coin_type.toString());
-  }, [coin_type]);
+  const [activeAccountWallets, setActiveAccountWallets] = useState<Wallet[]>(
+    () => {
+      const storedActiveAccountWallets = localStorage.getItem("accounts");
+      return storedActiveAccountWallets
+        ? JSON.parse(storedActiveAccountWallets)[activeAccountId].wallets
+        : [];
+    }
+  );
 
   useEffect(() => {
     localStorage.setItem("accounts", JSON.stringify(accounts));
-  }, [accounts]);
+    localStorage.setItem("activeAccountId", String(activeAccountId));
+    localStorage.setItem("activeWalletId", String(activeWalletId));
+
+  }, [accounts, activeAccountId, activeWalletId]);
 
   useEffect(() => {
-    localStorage.setItem("ethCount", ethCount.toString());
-  }, [ethCount]);
+    const storedAccounts = localStorage.getItem("accounts");
+    const wallets =
+      storedAccounts && activeAccountId !== -1
+        ? JSON.parse(storedAccounts)[activeAccountId].wallets
+        : [];
+    setActiveAccountWallets(wallets);
+  }, [accounts, activeAccountId]);
+  
 
-  useEffect(() => {
-    localStorage.setItem("solCount", solCount.toString());
-  }, [solCount]);
-
-  // Context methods
-  const setMnemonicString = (mnemonic: string) => setMnemonicStringState(mnemonic);
-  const setSeed = (seed: string) => setSeedState(seed);
-  const setCoinType = (coinType: number) => setCoinTypeState(coinType);
+  const setActiveAccount = (accountId: number) => {
+    setActiveAccountId(accountId);
+  };
+  
+  // const setActiveWallets = (accounts: Account[]) => {
+  //   console.log(accounts)
+  //   setActiveAccountWallets(accounts[activeAccountId].wallets);
+  // };
+  const setActiveWallet = (walletId: number) => {
+    setActiveWalletId(walletId);
+  };
 
   const addAccount = (account: Account) => {
-    setAccountsState((prevAccounts) => [...prevAccounts, account]);
+    setAccounts((prev) => [...prev, account]);
+  };
 
-    if (account.type === "ethereum") {
-      setEthCountState((prev) => prev + 1);
-    } else if (account.type === "solana") {
-      setSolCountState((prev) => prev + 1);
-    }
+  const updateWalletInAccount = (updatedWallet: Wallet, accountId: number) => {
+    setAccounts((prev) =>
+      prev.map((account) =>
+        account.id === accountId
+          ? {
+              ...account,
+              wallets: account.wallets.map((wallet) =>
+                wallet.id === updatedWallet.id
+                  ? { ...wallet, ...updatedWallet }
+                  : wallet
+              ),
+            }
+          : account
+      )
+    );
+  };
+
+  const addWalletToAccount = (wallet: Wallet, accountId: number) => {
+    setAccounts((prev) =>
+      prev.map((account) =>
+        account.id === accountId
+          ? { ...account, wallets: [...account.wallets, wallet] }
+          : account
+      )
+    );
+  };
+  const addAccountMnemonic = (accountId: number, newMnemonic: string) => {
+    setAccounts((prev) => {
+      const updatedAccounts = prev.map((account) =>
+        account.id === accountId
+          ? { ...account, mnemonicString: newMnemonic }
+          : account
+      );
+      localStorage.setItem("accounts", JSON.stringify(updatedAccounts));
+      return updatedAccounts;
+    });
   };
 
   return (
     <MnemonicContext.Provider
       value={{
-        mnemonicString,
-        setMnemonicString,
-        seed,
-        setSeedState,
-        coin_type,
-        setCoinType,
         accounts,
+        activeAccountId,
+        activeWalletId,
+        activeAccountWallets,
+        setActiveAccount,
+        setActiveWallet,
         addAccount,
-        ethCount,
-        solCount,
-        totalCount: ethCount + solCount,
+        updateWalletInAccount,
+        addAccountMnemonic,
+        addWalletToAccount,
       }}
     >
       {children}
@@ -111,6 +163,7 @@ export const MnemonicProvider: React.FC<{ children: ReactNode }> = ({ children }
   );
 };
 
+// Custom Hook to access the context
 export const useMnemonic = () => {
   const context = useContext(MnemonicContext);
   if (!context) {

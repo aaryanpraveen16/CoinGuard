@@ -1,93 +1,135 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { generateMnemonic, mnemonicToSeedSync } from "bip39";
-import Button from "../components/Button";
+import { generateMnemonic } from "bip39";
+import { Box, Button, Checkbox, Container, Grid, Typography, Divider } from "@mui/material";
 import { useMnemonic } from "../context/MnemonicContext";
 
-function SecretRecoveryPhrase() {
+const SecretRecoveryPhrase: React.FC = () => {
   const navigate = useNavigate();
-  // const [mnemonic, setmnemonic] = useState<string[]>([]);
   const [isChecked, setIsChecked] = useState(false);
-  const {setMnemonicString, setSeedState } = useMnemonic();
   const [mnemonicArray, setMnemonicArray] = useState<string[]>([]);
-  const [mnemonicString, setMnemonicStringState] = useState<string>(""); // Full mnemonic string
+  const { addAccountMnemonic , setActiveAccount ,accounts} = useMnemonic();
+  useEffect(() => {
+    const mnemonic = generateMnemonic(); // Generate mnemonic
+    setMnemonicArray(mnemonic.split(" ")); // Split into words
+    console.log(mnemonic,"mnemonic");
+    setActiveAccount(accounts.length - 1);
+    addAccountMnemonic(accounts.length - 1,mnemonic);
+  }, []);
+
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIsChecked(e.target.checked);
   };
-  // Generate a 12-word mnemonic
-  useEffect(() => {
-    const mnemonic = generateMnemonic(128); // Generate mnemonic
-    setMnemonicArray(mnemonic.split(" ")); // Split mnemonic into words
-    setMnemonicStringState(mnemonic); // Save full mnemonic as a string
-    setMnemonicString(mnemonic); // Save to context
-    const seed:string = mnemonicToSeedSync(mnemonic).toString("hex"); // Generate seed
-    setSeedState(seed); // Save seed to context as hex string
-    console.log("Generated Seed:", seed);
-  }, []); // Dependencies: Only context setters
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(mnemonicString);
+    navigator.clipboard.writeText(mnemonicArray.join(" "));
     alert("Recovery Phrase copied to clipboard!");
   };
+
   return (
-    <>
-      <div className="page-container">
-        <div
-          className="col-container"
-          style={{ display: "flex", flexDirection: "column", gap: "2vh" }}
+    <Box
+      sx={{
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center", // Horizontal centering
+        alignItems: "center", // Vertical centering
+        backgroundColor: "#0E0F14",
+        color: "#EDEDED",
+        width:"100vw"
+      }}
+    >
+      <Container>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            alignItems: "center",
+            textAlign: "center",
+          }}
         >
-          <h1>Secret Recovery Phrase</h1>
-          <p style={{ color: "#5A5E70" }}>Save these words in a safe place</p>
-          <p
-            style={{ color: "#4c94ff", cursor: "pointer" }}
+          <Typography variant="h4" sx={{ color: "#EDEDED" }}>
+            Secret Recovery Phrase
+          </Typography>
+          <Typography variant="body1" sx={{ color: "#5A5E70" }}>
+            Save these words in a safe place
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ color: "#4c94ff", cursor: "pointer" }}
             onClick={() => navigate("/recovery-phrase-warning")}
           >
             Read the warnings again
-          </p>
-          <div className="grid-container" onClick={(e)=>copyToClipboard()}>
-            {mnemonicArray.map((mnemonicWord: string,index:number) => (
-              <div className="grid-item" key={index}>{mnemonicWord}</div>
-            ))}
+          </Typography>
 
-            <hr style={{ border: "1px solid #ffffff1a", width: "100%" }} />
-            <div className="card-text-container">
-              <p style={{ color: "#5A5E70", textAlign: "center" }}>
-                Click anywhere on this card to copy
-              </p>
-            </div>
-          </div>
-          <div
-            className="checkbox-wrapper-13"
-            style={{ marginBottom: "20px", width: "90%", display: "flex", justifyContent:"center" }}
+          <Box
+            sx={{
+              width: "100%",
+              padding: 2,
+              border: "1px solid #ffffff1a",
+              borderRadius: 2,
+              textAlign: "center",
+              cursor: "pointer",
+              backgroundColor: "#333", // Card background color
+            }}
+            onClick={copyToClipboard}
           >
-            <input
-              style={{ marginRight: "10px" }}
+            <Grid container spacing={1}>
+              {mnemonicArray.map((word, index) => (
+                <Grid item xs={4} key={index}>
+                  <Typography variant="body2" sx={{ color: "#EDEDED" }}>
+                    {word}
+                  </Typography>
+                </Grid>
+              ))}
+            </Grid>
+            <Divider sx={{ my: 2, borderColor: "#ffffff1a" }} />
+            <Typography variant="body2" sx={{ color: "#5A5E70" }}>
+              Click anywhere on this card to copy
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              justifyContent: "center",
+              width: "90%",
+            }}
+          >
+            <Checkbox
               id="recoveryPhraseAcknowledgment"
-              type="checkbox"
               checked={isChecked}
               onChange={handleCheckboxChange}
+              sx={{ color: "#5A5E70", "&.Mui-checked": { color: "#4c94ff" } }}
             />
-            <label htmlFor="recoveryPhraseAcknowledgment">
-              I understand that if I lose my recovery phrase, I cannot recover
-              my account.
-            </label>
-          </div>
+            <Typography variant="body2" sx={{ color: "#5A5E70" }}>
+              I understand that if I lose my recovery phrase, I cannot recover my account.
+            </Typography>
+          </Box>
 
           <Button
-            buttonText="Next"
-            backgroundColor={isChecked ? "#EDEDED" : "#D3D3D3"} // Dim the button when disabled
-            size="medium"
-            style={{
-              color: isChecked ? "#2D2E36" : "#A0A0A0", // Change text color when disabled
-              marginBottom: "10px",
-              cursor: isChecked ? "pointer" : "not-allowed", // Show proper cursor
+            variant="contained"
+            disabled={!isChecked}
+            sx={{
+              width: "100%",
+              maxWidth: "300px",
+              backgroundColor: isChecked ? "#EDEDED" : "#D3D3D3",
+              color: isChecked ? "#2D2E36" : "#A0A0A0",
+              cursor: isChecked ? "pointer" : "not-allowed",
+              "&:hover": {
+                backgroundColor: isChecked ? "#EDEDED" : "#D3D3D3",
+              },
             }}
-            onClick={() => isChecked && navigate("/balance")} // Prevent navigation if unchecked
-          />
-        </div>
-      </div>
-    </>
+            onClick={() => isChecked && navigate("/balance")}
+          >
+            Next
+          </Button>
+        </Box>
+      </Container>
+    </Box>
   );
-}
+};
 
 export default SecretRecoveryPhrase;
