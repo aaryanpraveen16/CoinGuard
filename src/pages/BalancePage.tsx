@@ -23,6 +23,9 @@ import {
   faArrowUp,
   faPlus,
 } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router-dom";
+import { Connection ,PublicKey,clusterApiUrl } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 const BalancePage: React.FC = () => {
   const {
@@ -33,19 +36,20 @@ const BalancePage: React.FC = () => {
     setActiveWallet,
     activeAccountWallets,
     addWalletToAccount,
-    // setActiveWallets,
+    setActiveWalletBalance,
+    activeWalletBalance,
   } = useMnemonic();
   const account = React.useMemo(
     () => accounts[activeAccountId],
     [accounts, activeAccountId]
   );
   const mnemonicString = account.mnemonicString;
-  const coinType = React.useMemo(
-    () => account.wallets[activeWalletId]?.type,
-    [account, activeWalletId]
-  );
+  const coinType = account.type;
   let seed: string = "";
-  console.log(activeAccountWallets);
+  let navigate = useNavigate();
+  const activeWallet = account?.wallets[activeWalletId];
+  let connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+
   useEffect(() => {
     const deriveKeyAndFetchBalance = () => {
       try {
@@ -58,26 +62,23 @@ const BalancePage: React.FC = () => {
         console.error("Error deriving keypair or fetching balance:", error);
       }
     };
-
     deriveKeyAndFetchBalance();
+    getBalance();
   }, []);
 
   const createSolanaWallet = async (action: string) => {
-    console.log("create sol wallet");
     seed = mnemonicToSeedSync(mnemonicString).toString("hex");
     const derivationPath = `m/44'/501'/${
       accounts.length - 1
     }'/${activeWalletId}'`;
-    console.log(derivationPath);
     const { publicKey, privateKey } = await deriveKeyPairForSolana(
       seed,
       derivationPath
     );
     if (action == "update") {
-      updateWallet(publicKey, privateKey, 501);
+      updateWallet(publicKey, privateKey);
     } else {
-      createWallet(publicKey, privateKey, 501);
-      // setActiveWallets(accounts);
+      createWallet(publicKey, privateKey);
     }
   };
   const createEthereumWallet = async (action: string) => {
@@ -90,22 +91,19 @@ const BalancePage: React.FC = () => {
       derivationPath
     );
     if (action == "update") {
-      updateWallet(publicKey, privateKey, 60);
+      updateWallet(publicKey, privateKey);
     } else {
-      createWallet(publicKey, privateKey, 60);
+      createWallet(publicKey, privateKey);
     }
   };
 
-  const activeWallet = account?.wallets[activeWalletId];
   const updateWallet = (
     publicKey: string,
     privateKey: string,
-    type: number
   ) => {
     updateWalletInAccount(
       {
         id: account.wallets.length - 1, // Assign a new wallet ID
-        type,
         publicKey,
         privateKey,
         seed,
@@ -117,12 +115,10 @@ const BalancePage: React.FC = () => {
   const createWallet = (
     publicKey: string,
     privateKey: string,
-    type: number
   ) => {
     addWalletToAccount(
       {
-        id: activeWalletId + 1,
-        type,
+        id: activeWalletId,
         publicKey,
         privateKey,
         seed,
@@ -132,19 +128,34 @@ const BalancePage: React.FC = () => {
     );
   };
 
-  const addNewWallet = () => {
-    if (coinType == 501) {
-      setActiveWallet(activeWalletId + 1);
-      createSolanaWallet("create");
-    } else {
-      setActiveWallet(activeWalletId + 1);
-      createEthereumWallet("create");
-    }
-  };
 
+  useEffect(() => {
+    const createNewWallet = async () => {
+      if (coinType === 501) {
+        await createSolanaWallet("create");
+      } else if (coinType === 60) {
+        await createEthereumWallet("create");
+      }
+    };
+    if (activeWalletId >= account.wallets.length) {
+      createNewWallet();
+    }
+    getBalance();
+  }, [activeWalletId]);
+
+  const addNewWallet = () => {
+    setActiveWallet(activeWalletId + 1);
+  };
   const handleWalletChange = (event: SelectChangeEvent<number>) => {
     setActiveWallet(event.target.value as number);
   };
+
+
+  const getBalance = async() => {
+    let balance = await connection.getBalance(new PublicKey(activeWallet.publicKey));
+    setActiveWalletBalance(balance);
+  }
+
   return (
     <Box
       sx={{
@@ -224,7 +235,7 @@ const BalancePage: React.FC = () => {
               {activeWallet?.publicKey || "N/A"}
             </Typography>
             <Typography variant="body1" sx={{ color: "#EDEDED" }}>
-              <strong>Balance:</strong> {activeWallet?.balance}{" "}
+              <strong>Balance:</strong> {activeWalletBalance/LAMPORTS_PER_SOL}{" "}
               {coinType === 60 ? "ETH" : "SOL"}
             </Typography>
           </Stack>
@@ -257,6 +268,7 @@ const BalancePage: React.FC = () => {
                   color: "#2D2E36",
                 },
               }}
+              onClick={() => navigate("/select-recepient")}
             >
               Send
             </Button>

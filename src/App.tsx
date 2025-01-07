@@ -6,6 +6,8 @@ import RecoveryPhraseWarning from './pages/RecoveryPhraseWarning';
 import SecretRecoveryPhrase from './pages/SecretRecoveryPhrase';
 import BalancePage from './pages/BalancePage';
 import Test from './pages/Test';
+import SelectRecepient from './pages/SelectRecepient';
+import SendSol from './pages/SendSol';
 
 function App() {
   return (
@@ -16,7 +18,9 @@ function App() {
         <Route path="/recovery-phrase-warning" element={<RecoveryPhraseWarning />} />
         <Route path="/secret-recovery-phrase" element={<SecretRecoveryPhrase />} />
         <Route path="/balance" element={<BalancePage />} />
+        <Route path="/select-recepient" element={<SelectRecepient />} />
         <Route path="/test" element={<Test />} />
+        <Route path="/send-sol" element={<SendSol />} />
       </Routes>
     </Router>
   );

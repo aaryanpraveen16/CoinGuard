@@ -9,7 +9,6 @@ import React, {
 // Wallet Interface
 interface Wallet {
   id: number;
-  type: number;
   publicKey: string;
   privateKey: string;
   seed: string;
@@ -21,6 +20,7 @@ interface Account {
   mnemonicString: string;
   id: number;
   username: string;
+  type: number;
   wallets: Wallet[];
 }
 
@@ -30,6 +30,8 @@ interface MnemonicContextType {
   activeAccountWallets: Wallet[];
   activeAccountId: number;
   activeWalletId: number;
+  activeWalletBalance: number;
+  setActiveWalletBalance:React.Dispatch<React.SetStateAction<number>>;
   setActiveAccount: (accountId: number) => void;
   setActiveWallet: (walletId: number) => void;
   addAccount: (account: Account) => void;
@@ -52,7 +54,7 @@ export const MnemonicProvider: React.FC<{ children: ReactNode }> = ({
     const storedAccounts = localStorage.getItem("accounts");
     return storedAccounts ? JSON.parse(storedAccounts) : [];
   });
-  console.log("here");
+
   const [activeAccountId, setActiveAccountId] = useState<number>(() => {
     const storedActiveAccountId = localStorage.getItem("activeAccountId");
     return storedActiveAccountId ? Number(storedActiveAccountId) : -1;
@@ -72,6 +74,25 @@ export const MnemonicProvider: React.FC<{ children: ReactNode }> = ({
     }
   );
 
+  // const [activeWalletBalance, setActiveWalletBalance] = useState<number>(() => {
+  //   const storedActiveAccountWallets = localStorage.getItem("accounts");
+  //     return storedActiveAccountWallets
+  //       ? JSON.parse(storedActiveAccountWallets)[activeAccountId].wallets[activeWalletId]
+  //       : 0;
+  // });
+  const [activeWalletBalance, setActiveWalletBalance] = useState<number>(() => {
+    const storedAccounts = localStorage.getItem("accounts");
+    if (storedAccounts) {
+      const accounts = JSON.parse(storedAccounts);
+      const activeAccount = accounts.find((acc: Account) => acc.id === activeAccountId);
+      if (activeAccount) {
+        const activeWallet = activeAccount.wallets.find((wallet: Wallet) => wallet.id === activeWalletId);
+        return activeWallet ? activeWallet.balance : 0;
+      }
+    }
+    return 0; // Default balance if not found
+  });
+
   useEffect(() => {
     localStorage.setItem("accounts", JSON.stringify(accounts));
     localStorage.setItem("activeAccountId", String(activeAccountId));
@@ -88,15 +109,32 @@ export const MnemonicProvider: React.FC<{ children: ReactNode }> = ({
     setActiveAccountWallets(wallets);
   }, [accounts, activeAccountId]);
   
+  useEffect(() => {
+    if (activeAccountId === -1 || activeWalletId === -1) return;
+  
+    setAccounts((prevAccounts) => {
+      const updatedAccounts = prevAccounts.map((account) =>
+        account.id === activeAccountId
+          ? {
+              ...account,
+              wallets: account.wallets.map((wallet) =>
+                wallet.id === activeWalletId
+                  ? { ...wallet, balance: activeWalletBalance }
+                  : wallet
+              ),
+            }
+          : account
+      );
+  
+      localStorage.setItem("accounts", JSON.stringify(updatedAccounts));
+      return updatedAccounts;
+    });
+  }, [activeWalletBalance]);
 
   const setActiveAccount = (accountId: number) => {
     setActiveAccountId(accountId);
   };
   
-  // const setActiveWallets = (accounts: Account[]) => {
-  //   console.log(accounts)
-  //   setActiveAccountWallets(accounts[activeAccountId].wallets);
-  // };
   const setActiveWallet = (walletId: number) => {
     setActiveWalletId(walletId);
   };
@@ -150,6 +188,8 @@ export const MnemonicProvider: React.FC<{ children: ReactNode }> = ({
         activeAccountId,
         activeWalletId,
         activeAccountWallets,
+        activeWalletBalance,
+        setActiveWalletBalance,
         setActiveAccount,
         setActiveWallet,
         addAccount,

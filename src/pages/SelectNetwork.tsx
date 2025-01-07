@@ -20,9 +20,9 @@ function SelectNetwork() {
       id: accounts.length,
       username: "",
       mnemonicString:"",
+      type: selectedCoinType,
       wallets: [{
         id: 0, 
-        type: selectedCoinType,
         publicKey: "",
         privateKey:"",
         seed:"",
